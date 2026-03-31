@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tạo Giấy Khen Học Sinh</title>
+  
+  <!-- Tải Tailwind CSS để giữ nguyên giao diện -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Tải React và ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Tải Babel để biên dịch mã JSX ngay trên trình duyệt -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Tải JSZip để hỗ trợ nén file hàng loạt -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- Inline SVG Icons ---
+    const Download = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    );
+    const Award = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+    );
+    const User = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    );
+    const GraduationCap = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.42 10.922a2 2 0 0 0-.019-3.838L12.83 4.3a2 2 0 0 0-1.66 0L2.6 7.08a2 2 0 0 0 0 3.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+    );
+    const ImageIcon = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+    );
+    const LayoutTemplate = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="7" x="3" y="3" rx="1"/><rect width="9" height="7" x="3" y="14" rx="1"/><rect width="5" height="7" x="16" y="14" rx="1"/></svg>
+    );
+    const Trophy = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+    );
+    const Users = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    );
+    const FileArchive = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M10 12v10"/><path d="M10 12H7"/><path d="M10 15H7"/><path d="M10 18H7"/><path d="M10 21H7"/></svg>
+    );
+    const Loader2 = ({ className }) => (
+      <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    );
+
+    const THEMES = {
+      classic: { id: 'classic', name: 'Cổ Điển', bg: '#fdfbf7', outer: '#d4af37', inner: '#0f2b5b', textMain: '#0f2b5b', textHighlight: '#c1121f', textNormal: '#333' },
+      traditional: { id: 'traditional', name: 'Truyền Thống', bg: '#fffdf0', outer: '#c1121f', inner: '#d4af37', textMain: '#c1121f', textHighlight: '#c1121f', textNormal: '#111' },
+      modern: { id: 'modern', name: 'Hiện Đại', bg: '#ffffff', outer: '#0ea5e9', inner: '#0369a1', textMain: '#0369a1', textHighlight: '#0ea5e9', textNormal: '#334155' },
+      elegant: { id: 'elegant', name: 'Sang Trọng', bg: '#f8f9fa', outer: '#14532d', inner: '#d4af37', textMain: '#14532d', textHighlight: '#b91c1c', textNormal: '#1f2937' },
+      minimal: { id: 'minimal', name: 'Tối Giản', bg: '#ffffff', outer: '#111827', inner: '#e5e7eb', textMain: '#111827', textHighlight: '#111827', textNormal: '#4b5563' },
+      genz_neon: { id: 'genz_neon', name: 'Neon Cyber', bg: '#0f172a', outer: '#06b6d4', inner: '#d946ef', textMain: '#22d3ee', textHighlight: '#e879f9', textNormal: '#f8fafc' },
+      genz_pastel: { id: 'genz_pastel', name: 'Pastel Vibe', bg: '#fdf4ff', outer: '#fbcfe8', inner: '#bfdbfe', textMain: '#db2777', textHighlight: '#9333ea', textNormal: '#4b5563' },
+      genz_y2k: { id: 'genz_y2k', name: 'Y2K Style', bg: '#fef08a', outer: '#c026d3', inner: '#3b82f6', textMain: '#c026d3', textHighlight: '#ea580c', textNormal: '#1e3a8a' },
+      kids_animals: { id: 'kids_animals', name: 'Động Vật Nhí', bg: '#f0fdf4', outer: '#22c55e', inner: '#f97316', textMain: '#15803d', textHighlight: '#c2410c', textNormal: '#166534' },
+      kids_space: { id: 'kids_space', name: 'Phi Hành Gia', bg: '#1e1b4b', outer: '#8b5cf6', inner: '#fbbf24', textMain: '#fbbf24', textHighlight: '#38bdf8', textNormal: '#e0e7ff' },
+      kids_rainbow: { id: 'kids_rainbow', name: 'Mây Cầu Vồng', bg: '#ffffff', outer: '#ef4444', inner: '#3b82f6', textMain: '#be185d', textHighlight: '#ea580c', textNormal: '#4338ca' },
+      kids_ocean: { id: 'kids_ocean', name: 'Đại Dương Xanh', bg: '#ecfeff', outer: '#06b6d4', inner: '#0369a1', textMain: '#0c4a6e', textHighlight: '#0284c7', textNormal: '#164e63' },
+      kids_candy: { id: 'kids_candy', name: 'Kẹo Ngọt', bg: '#fdf4ff', outer: '#f472b6', inner: '#fcd34d', textMain: '#be185d', textHighlight: '#f43f5e', textNormal: '#831843' }
+    };
+
+    // Hàm render chính được tách rời để phục vụ vẽ ẩn (off-screen) cho ảnh hàng loạt
+    const renderCertificate = (canvas, config) => {
+      const ctx = canvas.getContext('2d');
+      const W = 2246; const H = 1588;
+      canvas.width = W; canvas.height = H;
+      const { theme, schoolName, className, period, studentName, teacherName, reason, photoImg, decoration, laurelStyle } = config;
+
+      // Các Helper functions
+      const drawTextFit = (ctx, txt, x, y, baseSize, fontName, color, align, maxWidth, styleWeight = '') => {
+        let size = baseSize;
+        ctx.font = `${styleWeight} ${size}px "${fontName}", serif`.trim();
+        while (ctx.measureText(txt).width > maxWidth && size > 20) {
+          size -= 2;
+          ctx.font = `${styleWeight} ${size}px "${fontName}", serif`.trim();
+        }
+        ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(txt, x, y);
+        return size; 
+      };
+
+      const wrapTextFit = (context, text, x, y, maxWidth, baseLineHeight, baseSize, fontName, color, styleWeight = '') => {
+        context.fillStyle = color; context.textAlign = 'left'; context.textBaseline = 'middle';
+        let size = baseSize; context.font = `${styleWeight} ${size}px "${fontName}", serif`.trim();
+        const words = text.split(' '); let line = ''; let currentY = y;
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + ' ';
+          const metrics = context.measureText(testLine);
+          if (metrics.width > maxWidth && n > 0) {
+            context.fillText(line, x, currentY); line = words[n] + ' '; currentY += baseLineHeight;
+          } else { line = testLine; }
+        }
+        context.fillText(line, x, currentY);
+      };
+
+      // 1. Vẽ Nền
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // 2. Khung Viền
+      const drawBorders = () => {
+        ctx.lineWidth = 20; ctx.strokeStyle = theme.outer; ctx.strokeRect(40, 40, W - 80, H - 80);
+        ctx.lineWidth = 4; ctx.strokeStyle = theme.inner; ctx.strokeRect(80, 80, W - 160, H - 160);
+
+        if (theme.id === 'classic' || theme.id === 'elegant') {
+          const drawCorner = (x, y, rot) => {
+            ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = theme.inner;
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(120, 0); ctx.lineTo(0, 120); ctx.fill(); ctx.restore();
+          };
+          drawCorner(40, 40, 0); drawCorner(W - 40, 40, Math.PI / 2); drawCorner(W - 40, H - 40, Math.PI); drawCorner(40, H - 40, -Math.PI / 2);
+        } else if (theme.id === 'traditional') {
+          const drawCircle = (x, y) => { ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI * 2); ctx.fillStyle = theme.inner; ctx.fill(); };
+          drawCircle(80, 80); drawCircle(W - 80, 80); drawCircle(W - 80, H - 80); drawCircle(80, H - 80);
+        } else if (theme.id === 'modern') {
+           const drawPoly = (x, y, x2, y2, x3, y3) => { ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.closePath(); ctx.fillStyle = theme.outer; ctx.fill(); }
+           drawPoly(40,40, 200,40, 40,200); drawPoly(W-40,40, W-200,40, W-40,200); drawPoly(W-40,H-40, W-200,H-40, W-40,H-200); drawPoly(40,H-40, 200,H-40, 40,H-200);
+        } else if (theme.id === 'genz_neon') {
+          const drawCyberCorner = (x, y, isRight, isBottom) => {
+            ctx.beginPath(); ctx.moveTo(x + (isRight ? -100 : 100), y); ctx.lineTo(x, y); ctx.lineTo(x, y + (isBottom ? -100 : 100));
+            ctx.lineWidth = 15; ctx.strokeStyle = theme.textHighlight; ctx.stroke();
+          };
+          drawCyberCorner(40, 40, false, false); drawCyberCorner(W - 40, 40, true, false); drawCyberCorner(40, H - 40, false, true); drawCyberCorner(W - 40, H - 40, true, true);
+        } else if (theme.id === 'genz_pastel') {
+          const drawDot = (x, y) => { ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI * 2); ctx.fillStyle = theme.textHighlight; ctx.fill(); };
+          drawDot(80, 80); drawDot(W - 80, 80); drawDot(W - 80, H - 80); drawDot(80, H - 80);
+        } else if (theme.id === 'genz_y2k') {
+          ctx.lineWidth = 10; ctx.strokeStyle = theme.inner; ctx.strokeRect(60, 60, W - 120, H - 120);
+          ctx.fillStyle = theme.textHighlight; ctx.fillRect(40, 40, 50, 50); ctx.fillRect(W - 90, 40, 50, 50); ctx.fillRect(40, H - 90, 50, 50); ctx.fillRect(W - 90, H - 90, 50, 50);
+        } else if (theme.id === 'kids_animals') {
+          const drawPaw = (x, y) => {
+              ctx.fillStyle = theme.inner; ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI*2); ctx.fill();
+              ctx.beginPath(); ctx.arc(x-25, y-20, 12, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(x, y-30, 15, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(x+25, y-20, 12, 0, Math.PI*2); ctx.fill();
+          }
+          drawPaw(80, 80); drawPaw(W-80, 80); drawPaw(W-80, H-80); drawPaw(80, H-80);
+        } else if (theme.id === 'kids_space') {
+          const drawStar = (cx, cy, spikes, outerRadius, innerRadius) => {
+              let rot = Math.PI / 2 * 3; let x = cx; let y = cy; let step = Math.PI / spikes;
+              ctx.beginPath(); ctx.moveTo(cx, cy - outerRadius);
+              for(let i=0; i<spikes; i++){
+                  x = cx + Math.cos(rot)*outerRadius; y = cy + Math.sin(rot)*outerRadius; ctx.lineTo(x,y); rot+=step;
+                  x = cx + Math.cos(rot)*innerRadius; y = cy + Math.sin(rot)*innerRadius; ctx.lineTo(x,y); rot+=step;
+              }
+              ctx.lineTo(cx, cy - outerRadius); ctx.closePath(); ctx.fillStyle = theme.inner; ctx.fill();
+          }
+          drawStar(100, 100, 5, 40, 15); drawStar(W-100, 100, 5, 40, 15); drawStar(W-100, H-100, 5, 40, 15); drawStar(100, H-100, 5, 40, 15);
+        } else if (theme.id === 'kids_rainbow') {
+          const drawCloud = (x, y) => {
+              ctx.fillStyle = '#bae6fd'; ctx.beginPath(); ctx.arc(x, y, 30, Math.PI*0.5, Math.PI*1.5); ctx.arc(x+25, y-20, 35, Math.PI*1, Math.PI*2);
+              ctx.arc(x+60, y-10, 30, Math.PI*1.2, Math.PI*2); ctx.arc(x+80, y+10, 20, Math.PI*1.5, Math.PI*0.5); ctx.moveTo(x+80, y+30); ctx.lineTo(x, y+30); ctx.fill();
+          }
+          drawCloud(50, 60); drawCloud(W-150, 60); drawCloud(W-150, H-100); drawCloud(50, H-100);
+        } else if (theme.id === 'kids_ocean') {
+          const drawBubble = (x, y, r) => {
+              ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; ctx.fill();
+              ctx.lineWidth = 2; ctx.strokeStyle = theme.inner; ctx.stroke(); ctx.beginPath(); ctx.arc(x - r*0.3, y - r*0.3, r*0.2, 0, Math.PI*2); ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; ctx.fill();
+          }
+          drawBubble(100, 100, 40); drawBubble(60, 150, 20); drawBubble(150, 60, 25); drawBubble(W-100, 100, 40); drawBubble(W-60, 150, 20); drawBubble(W-150, 60, 25);
+          drawBubble(W-100, H-100, 40); drawBubble(W-60, H-150, 20); drawBubble(W-150, H-60, 25); drawBubble(100, H-100, 40); drawBubble(60, H-150, 20); drawBubble(150, H-60, 25);
+        } else if (theme.id === 'kids_candy') {
+          const drawCandy = (x, y) => {
+              ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI/4); ctx.fillStyle = theme.outer;
+              ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(-60, -20); ctx.lineTo(-60, 20); ctx.fill();
+              ctx.beginPath(); ctx.moveTo(30, 0); ctx.lineTo(60, -20); ctx.lineTo(60, 20); ctx.fill();
+              ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI*2); ctx.fillStyle = theme.inner; ctx.fill();
+              ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI*2); ctx.fillStyle = '#ffffff'; ctx.fill();
+              ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI); ctx.lineWidth = 5; ctx.strokeStyle = theme.outer; ctx.stroke();
+              ctx.restore();
+          }
+          drawCandy(100, 100); drawCandy(W-100, 100); drawCandy(W-100, H-100); drawCandy(100, H-100);
+        }
+      };
+      drawBorders();
+
+      // 3. Header
+      drawTextFit(ctx, schoolName.toUpperCase(), 450, 160, 40, 'Times New Roman', theme.textMain, 'center', 750, 'bold');
+      ctx.fillStyle = theme.textMain; ctx.fillRect(300, 195, 300, 3);
+      drawTextFit(ctx, 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', W - 500, 150, 45, 'Times New Roman', theme.textNormal, 'center', 800, 'bold');
+      drawTextFit(ctx, 'Độc lập - Tự do - Hạnh phúc', W - 500, 210, 40, 'Times New Roman', theme.textNormal, 'center', 800, 'bold');
+      ctx.fillStyle = theme.textNormal; ctx.fillRect(W - 680, 245, 360, 3);
+
+      // 4. Title
+      drawTextFit(ctx, 'GIẤY KHEN', W / 2, 400, 140, 'Times New Roman', theme.textHighlight, 'center', 1000, 'bold');
+      drawTextFit(ctx, 'HỌC SINH TIÊU BIỂU', W / 2, 530, 60, 'Times New Roman', theme.inner, 'center', 800, 'italic bold');
+
+      // 5. Ảnh Thẻ Học Sinh & Vòng Nguyệt Quế
+      const cx = 500; const cy = 900; const r = 240;
+
+      if (photoImg) {
+        ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+        const imgAspect = photoImg.width / photoImg.height;
+        let dw = r * 2; let dh = r * 2;
+        if (imgAspect > 1) { dw = dh * imgAspect; } else { dh = dw / imgAspect; }
+        ctx.drawImage(photoImg, cx - dw / 2, cy - dh / 2, dw, dh);
+        ctx.restore();
+      } else {
+        ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = '#f3f4f6'; ctx.fill();
+        ctx.font = '40px Arial'; ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.fillText('Ảnh thẻ', cx, cy);
+        ctx.restore();
+      }
+
+      // Viền ảnh thẻ
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.lineWidth = 16; ctx.strokeStyle = theme.inner; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.lineWidth = 4; ctx.strokeStyle = theme.outer; ctx.stroke();
+
+      // Vẽ Vòng Nguyệt Quế
+      if (laurelStyle !== 'none') {
+        const drawLaurel = (ctx, x, y, radius, style) => {
+          ctx.save(); ctx.translate(x, y);
+          const branchR = radius + 35;
+          const drawBranches = (color, width) => {
+            ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.arc(0, 0, branchR, Math.PI * 0.55, Math.PI * 1.1); ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, branchR, -Math.PI * 0.1, Math.PI * 0.45); ctx.stroke();
+          };
+          const placeAlongArc = (step, callback) => {
+            let i = 0;
+            for(let angle = 0.6; angle <= 1.1; angle += step) {
+              ctx.save(); ctx.translate(Math.cos(Math.PI*angle)*branchR, Math.sin(Math.PI*angle)*branchR); ctx.rotate(Math.PI*angle + Math.PI/3); callback(i++, true); ctx.restore();
+            }
+            let j = 0;
+            for(let angle = -0.1; angle <= 0.4; angle += step) {
+              ctx.save(); ctx.translate(Math.cos(Math.PI*angle)*branchR, Math.sin(Math.PI*angle)*branchR); ctx.rotate(Math.PI*angle - Math.PI/3); callback(j++, false); ctx.restore();
+            }
+          };
+          const drawRibbon = (mainColor, shadowColor) => {
+            ctx.shadowColor = 'transparent'; ctx.fillStyle = shadowColor;
+            ctx.beginPath(); ctx.moveTo(0, branchR); ctx.lineTo(-30, branchR + 55); ctx.lineTo(-10, branchR + 55); ctx.lineTo(0, branchR + 20); ctx.lineTo(10, branchR + 55); ctx.lineTo(30, branchR + 55); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = mainColor; ctx.beginPath(); ctx.arc(0, branchR, 12, 0, Math.PI*2); ctx.fill();
+          };
+
+          ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 2;
+
+          if (style === 'classic_gold') {
+            drawBranches('#ca8a04', 8);
+            placeAlongArc(0.06, () => {
+              ctx.beginPath(); ctx.ellipse(0, 0, 18, 9, 0, 0, Math.PI*2);
+              ctx.fillStyle = '#eab308'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#a16207'; ctx.stroke();
+            });
+            drawRibbon('#dc2626', '#991b1b');
+          } else if (style === 'royal_emerald') {
+            drawBranches('#78350f', 6);
+            placeAlongArc(0.05, (i) => {
+              ctx.beginPath(); ctx.ellipse(0, 0, 16, 8, 0, 0, Math.PI*2);
+              ctx.fillStyle = '#166534'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#4ade80'; ctx.stroke();
+              if(i % 3 === 0) { ctx.beginPath(); ctx.arc(12, 0, 6, 0, Math.PI*2); ctx.fillStyle = '#dc2626'; ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle='#7f1d1d'; ctx.stroke(); }
+            });
+            drawRibbon('#ca8a04', '#854d0e');
+          } else if (style === 'sapphire_silver') {
+            drawBranches('#94a3b8', 5);
+            placeAlongArc(0.06, (i) => {
+              ctx.beginPath(); ctx.moveTo(-15,0); ctx.lineTo(0,-6); ctx.lineTo(15,0); ctx.lineTo(0,6); ctx.closePath();
+              ctx.fillStyle = '#e2e8f0'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#64748b'; ctx.stroke();
+              if(i % 2 === 0) { ctx.beginPath(); ctx.moveTo(0,-4); ctx.lineTo(4,0); ctx.lineTo(0,4); ctx.lineTo(-4,0); ctx.fillStyle='#06b6d4'; ctx.fill(); }
+            });
+            drawRibbon('#3b82f6', '#1e3a8a');
+          } else if (style === 'autumn_glory') {
+            drawBranches('#78350f', 7); const colors = ['#ea580c', '#dc2626', '#ca8a04'];
+            placeAlongArc(0.05, (i) => {
+              ctx.beginPath(); ctx.ellipse(0, 0, 18, 10, 0, 0, Math.PI*2);
+              ctx.fillStyle = colors[i % 3]; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#78350f'; ctx.stroke();
+            });
+            drawRibbon('#78350f', '#451a03');
+          } else if (style === 'cherry_blossom') {
+            drawBranches('#fbcfe8', 5);
+            placeAlongArc(0.08, () => {
+              ctx.fillStyle = '#f472b6';
+              for(let f=0; f<5; f++) { ctx.save(); ctx.rotate((Math.PI*2/5)*f); ctx.beginPath(); ctx.ellipse(0, -6, 4, 7, 0, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
+              ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fillStyle='#fef08a'; ctx.fill();
+            });
+            drawRibbon('#db2777', '#831843');
+          } else if (style === 'celestial_stars') {
+            ctx.shadowColor = '#fde047'; ctx.shadowBlur = 15;
+            drawBranches('#fef08a', 3);
+            placeAlongArc(0.07, (i) => {
+              const spikes = i%2===0 ? 5 : 4; const outR = i%2===0 ? 12 : 8;
+              ctx.fillStyle = '#fef08a'; ctx.beginPath();
+              for(let s=0; s<spikes*2; s++) { const r = s%2===0 ? outR : outR/2; const a = (s*Math.PI)/spikes; ctx.lineTo(r*Math.cos(a), r*Math.sin(a)); }
+              ctx.closePath(); ctx.fill();
+            });
+            drawRibbon('#eab308', '#a16207');
+          } else if (style === 'victory_wings') {
+            drawBranches('#e0e7ff', 4);
+            placeAlongArc(0.03, () => {
+              ctx.beginPath(); ctx.ellipse(10, 0, 25, 4, 0, 0, Math.PI*2);
+              ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = '#c7d2fe'; ctx.stroke();
+            });
+            drawRibbon('#fcd34d', '#d97706');
+          } else if (style === 'olympic_olive') {
+            drawBranches('#4b5563', 6);
+            placeAlongArc(0.05, (i) => {
+              ctx.beginPath(); ctx.ellipse(0, 0, 16, 5, 0, 0, Math.PI*2);
+              ctx.fillStyle = '#65a30d'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = '#3f6212'; ctx.stroke();
+              if(i % 3 === 1) { ctx.beginPath(); ctx.ellipse(8, -8, 5, 4, Math.PI/4, 0, Math.PI*2); ctx.fillStyle = '#111827'; ctx.fill(); }
+            });
+            drawRibbon('#374151', '#111827');
+          } else if (style === 'neon_cyber') {
+            ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 10;
+            drawBranches('#22d3ee', 4); ctx.shadowColor = '#d946ef';
+            placeAlongArc(0.06, () => {
+              ctx.beginPath(); ctx.moveTo(-15, -8); ctx.lineTo(15, 0); ctx.lineTo(-15, 8); ctx.closePath();
+              ctx.lineWidth = 2; ctx.strokeStyle = '#f0abfc'; ctx.stroke();
+            });
+            drawRibbon('#06b6d4', '#c026d3');
+          } else if (style === 'rainbow_pride') {
+            drawBranches('#cbd5e1', 5);
+            placeAlongArc(0.05, (i) => {
+              const hue = (i * 25) % 360;
+              ctx.beginPath(); ctx.ellipse(0, 0, 18, 9, 0, 0, Math.PI*2);
+              ctx.fillStyle = `hsl(${hue}, 80%, 60%)`; ctx.fill();
+              ctx.lineWidth = 1.5; ctx.strokeStyle = `hsl(${hue}, 80%, 40%)`; ctx.stroke();
+            });
+            drawRibbon('#a855f7', '#6b21a8');
+          }
+          ctx.restore();
+        }
+        drawLaurel(ctx, cx, cy, r, laurelStyle);
+      }
+
+      // 6. Nội dung chính
+      const textStartX = 850; const contentMaxWidth = W - textStartX - 150;
+
+      drawTextFit(ctx, 'Khen tặng em:', textStartX, 750, 45, 'Times New Roman', theme.textNormal, 'left', 400, 'italic');
+      drawTextFit(ctx, (studentName || '...').toUpperCase(), textStartX, 850, 85, 'Times New Roman', theme.textMain, 'left', contentMaxWidth, 'bold');
+      drawTextFit(ctx, `Học sinh lớp:`, textStartX, 980, 45, 'Times New Roman', theme.textNormal, 'left', 300);
+      drawTextFit(ctx, className || '...', textStartX + 280, 980, 45, 'Times New Roman', theme.textNormal, 'left', 400, 'bold');
+      drawTextFit(ctx, `Ghi nhận trong:`, textStartX, 1080, 45, 'Times New Roman', theme.textNormal, 'left', 350);
+      drawTextFit(ctx, period || '...', textStartX + 310, 1080, 45, 'Times New Roman', theme.textNormal, 'left', 500, 'bold');
+      drawTextFit(ctx, `Với thành tích:`, textStartX, 1180, 45, 'Times New Roman', theme.textNormal, 'left', 350);
+      wrapTextFit(ctx, reason || '...', textStartX + 300, 1180, contentMaxWidth - 300, 65, 45, 'Times New Roman', theme.textHighlight, 'bold');
+
+      // 7. Vẽ hoa văn trang trí
+      const polyStar = (ctx, cx, cy, spikes, outerR, innerR) => {
+          let rot = Math.PI / 2 * 3; let x = cx, y = cy, step = Math.PI / spikes;
+          ctx.beginPath(); ctx.moveTo(cx, cy - outerR);
+          for(let i=0; i<spikes; i++){
+              x = cx + Math.cos(rot)*outerR; y = cy + Math.sin(rot)*outerR; ctx.lineTo(x,y); rot+=step;
+              x = cx + Math.cos(rot)*innerR; y = cy + Math.sin(rot)*innerR; ctx.lineTo(x,y); rot+=step;
+          }
+          ctx.lineTo(cx, cy - outerR); ctx.closePath();
+      };
+
+      const drawDecorator = (type, x, y, scale = 1) => {
+          ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+          ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 5;
+
+          if (type === 'medal') {
+              ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.moveTo(-20, 30); ctx.lineTo(-50, 130); ctx.lineTo(-15, 110); ctx.lineTo(10, 130); ctx.fill();
+              ctx.fillStyle = '#0f2b5b'; ctx.beginPath(); ctx.moveTo(20, 30); ctx.lineTo(50, 130); ctx.lineTo(15, 110); ctx.lineTo(-10, 130); ctx.fill();
+              ctx.shadowColor = 'transparent';
+              const grad = ctx.createLinearGradient(-45,-45,45,45); grad.addColorStop(0,'#fef08a'); grad.addColorStop(0.5,'#eab308'); grad.addColorStop(1,'#9a3412');
+              ctx.beginPath(); ctx.arc(0,0,60,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+              ctx.lineWidth = 5; ctx.strokeStyle = '#ca8a04'; ctx.stroke();
+              polyStar(ctx, 0, -15, 5, 20, 8); ctx.fillStyle = '#fffbeb'; ctx.fill();
+              ctx.font = 'bold 18px "Times New Roman"'; ctx.fillStyle = '#713f12'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('HẠNG', 0, 15);
+              ctx.font = 'bold 24px "Times New Roman"'; ctx.fillText('NHẤT', 0, 38);
+          } else if (type === 'trophy') {
+              ctx.fillStyle = '#1f2937'; ctx.fillRect(-45, 60, 90, 20); ctx.fillStyle = '#374151'; ctx.fillRect(-30, 40, 60, 20);
+              ctx.shadowColor = 'transparent';
+              const stemG = ctx.createLinearGradient(-15,0,15,0); stemG.addColorStop(0,'#ca8a04'); stemG.addColorStop(0.5,'#fef08a'); stemG.addColorStop(1,'#a16207');
+              ctx.fillStyle = stemG; ctx.fillRect(-10, 5, 20, 35);
+              ctx.beginPath(); ctx.arc(-45,-35,25,Math.PI/2,Math.PI*1.5); ctx.lineWidth=10; ctx.strokeStyle='#eab308'; ctx.stroke();
+              ctx.beginPath(); ctx.arc(45,-35,25,-Math.PI/2,Math.PI/2); ctx.lineWidth=10; ctx.strokeStyle='#eab308'; ctx.stroke();
+              const cupG = ctx.createLinearGradient(-50,0,50,0); cupG.addColorStop(0,'#eab308'); cupG.addColorStop(0.3,'#fef08a'); cupG.addColorStop(0.8,'#ca8a04'); cupG.addColorStop(1,'#854d0e');
+              ctx.beginPath(); ctx.moveTo(-50,-60); ctx.lineTo(50,-60); ctx.bezierCurveTo(50,10,15,10,0,10); ctx.bezierCurveTo(-15,10,-50,10,-50,-60); ctx.closePath(); ctx.fillStyle = cupG; ctx.fill();
+              ctx.beginPath(); ctx.ellipse(0,-60,50,12,0,0,Math.PI*2); ctx.fillStyle = '#fef08a'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ca8a04'; ctx.stroke();
+              polyStar(ctx, 0, -25, 5, 18, 7); ctx.fillStyle = '#fffbeb'; ctx.fill();
+          } else if (type === 'crown') {
+              const grad = ctx.createLinearGradient(0, -50, 0, 40); grad.addColorStop(0, '#fef08a'); grad.addColorStop(1, '#ca8a04');
+              ctx.fillStyle = grad;
+              ctx.beginPath(); ctx.moveTo(-60, 30); ctx.lineTo(-80, -30); ctx.lineTo(-30, -10); ctx.lineTo(0, -60); ctx.lineTo(30, -10); ctx.lineTo(80, -30); ctx.lineTo(60, 30); ctx.closePath(); ctx.fill();
+              ctx.lineWidth = 4; ctx.strokeStyle = '#a16207'; ctx.stroke();
+              ctx.fillStyle = '#b45309'; ctx.fillRect(-60, 30, 120, 15);
+              ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, -60, 10, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-80, -30, 8, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(80, -30, 8, 0, Math.PI*2); ctx.fill();
+              ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(0, 15, 12, 0, Math.PI*2); ctx.fill();
+          } else if (type === 'shield') {
+              ctx.fillStyle = '#1d4ed8';
+              ctx.beginPath(); ctx.moveTo(-50, -50); ctx.lineTo(50, -50); ctx.lineTo(50, 10); ctx.bezierCurveTo(50, 60, 0, 80, 0, 80); ctx.bezierCurveTo(0, 80, -50, 60, -50, 10); ctx.closePath(); ctx.fill();
+              ctx.lineWidth = 8; ctx.strokeStyle = '#fbbf24'; ctx.stroke();
+              polyStar(ctx, 0, 0, 5, 25, 10); ctx.fillStyle = '#fbbf24'; ctx.fill();
+          } else if (type === 'ribbon_rosette') {
+              ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-50, 80); ctx.lineTo(-15, 70); ctx.lineTo(10, 80); ctx.fill();
+              ctx.fillStyle = '#991b1b'; ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(50, 80); ctx.lineTo(15, 70); ctx.lineTo(-10, 80); ctx.fill();
+              ctx.shadowColor = 'transparent';
+              ctx.fillStyle = '#eab308'; polyStar(ctx, 0, 0, 16, 50, 40); ctx.fill();
+              ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI*2); ctx.fill();
+              ctx.lineWidth = 3; ctx.strokeStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI*2); ctx.stroke();
+          } else if (type === 'starburst') {
+              ctx.fillStyle = '#fbbf24'; polyStar(ctx, 0, 0, 8, 60, 20); ctx.fill();
+              ctx.fillStyle = '#f59e0b'; polyStar(ctx, 0, 0, 8, 45, 15); ctx.fill();
+              ctx.fillStyle = '#fffbeb'; ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill();
+          } else if (type === 'sun') {
+              ctx.fillStyle = '#f59e0b'; polyStar(ctx, 0, 0, 12, 60, 45); ctx.fill();
+              ctx.fillStyle = '#fcd34d'; ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI*2); ctx.fill();
+              ctx.lineWidth = 4; ctx.strokeStyle = '#d97706'; ctx.stroke();
+          } else if (type === 'flower') {
+              ctx.fillStyle = '#ec4899';
+              for(let i=0; i<6; i++) { ctx.save(); ctx.rotate((Math.PI/3)*i); ctx.beginPath(); ctx.ellipse(0, -35, 20, 30, 0, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
+              ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI*2); ctx.fill();
+              ctx.lineWidth = 3; ctx.strokeStyle = '#ca8a04'; ctx.stroke();
+          } else if (type === 'book') {
+              ctx.fillStyle = '#3b82f6'; ctx.fillRect(-60, -30, 60, 70); ctx.fillRect(0, -30, 60, 70);
+              ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(-55, -20); ctx.lineTo(0, -10); ctx.lineTo(55, -20); ctx.lineTo(55, 30); ctx.lineTo(0, 40); ctx.lineTo(-55, 30); ctx.closePath(); ctx.fill();
+              ctx.lineWidth = 2; ctx.strokeStyle = '#9ca3af'; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(0, 40); ctx.stroke();
+              ctx.strokeStyle = '#cbd5e1'; ctx.beginPath(); ctx.moveTo(-45, -5); ctx.lineTo(-10, 0); ctx.moveTo(-45, 10); ctx.lineTo(-10, 15); ctx.moveTo(10, 0); ctx.lineTo(45, -5); ctx.moveTo(10, 15); ctx.lineTo(45, 10); ctx.stroke();
+              polyStar(ctx, 0, -35, 5, 15, 6); ctx.fillStyle = '#fbbf24'; ctx.fill();
+          } else if (type === 'diamond') {
+              ctx.fillStyle = '#67e8f9'; ctx.beginPath(); ctx.moveTo(-40, -20); ctx.lineTo(40, -20); ctx.lineTo(0, 40); ctx.closePath(); ctx.fill();
+              ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.moveTo(-20, -20); ctx.lineTo(20, -20); ctx.lineTo(0, 40); ctx.closePath(); ctx.fill();
+              ctx.fillStyle = '#cffafe'; ctx.beginPath(); ctx.moveTo(-40, -20); ctx.lineTo(-20, -40); ctx.lineTo(20, -40); ctx.lineTo(40, -20); ctx.closePath(); ctx.fill();
+              ctx.fillStyle = '#a5f3fc'; ctx.beginPath(); ctx.moveTo(-20, -20); ctx.lineTo(-10, -40); ctx.lineTo(10, -40); ctx.lineTo(20, -20); ctx.closePath(); ctx.fill();
+              ctx.lineWidth = 2; ctx.strokeStyle = '#0891b2';
+              ctx.beginPath(); ctx.moveTo(-40,-20); ctx.lineTo(40,-20); ctx.lineTo(0,40); ctx.lineTo(-40,-20); ctx.lineTo(-20,-40); ctx.lineTo(20,-40); ctx.lineTo(40,-20); ctx.stroke();
+          }
+          ctx.restore();
+      };
+
+      if (decoration !== 'none') {
+          drawDecorator(decoration, W - 450, 650, 1.8);
+      }
+
+      // 8. Chữ ký
+      const today = new Date();
+      const dateStr = `Ngày ${today.getDate()} tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
+      drawTextFit(ctx, dateStr, W - 450, 1300, 40, 'Times New Roman', theme.textNormal, 'center', 500, 'italic');
+      drawTextFit(ctx, 'GIÁO VIÊN CHỦ NHIỆM', W - 450, 1360, 45, 'Times New Roman', theme.textMain, 'center', 500, 'bold');
+      drawTextFit(ctx, teacherName || '...', W - 450, 1480, 80, 'Dancing Script', theme.textHighlight, 'center', 600, 'bold');
+    };
+
+    function App() {
+      const canvasRef = useRef(null);
+
+      // Chế độ nhập liệu
+      const [inputMode, setInputMode] = useState('single'); // 'single' hoặc 'batch'
+      const [studentList, setStudentList] = useState('');
+      const [isGenerating, setIsGenerating] = useState(false);
+
+      // Form State
+      const [selectedTheme, setSelectedTheme] = useState('classic');
+      const [schoolName, setSchoolName] = useState('TRƯỜNG THPT NGUYỄN HỮU CẢNH');
+      const [className, setClassName] = useState('10A1');
+      const [period, setPeriod] = useState('Tuần 10');
+      const [studentName, setStudentName] = useState('Nguyễn Văn A');
+      const [teacherName, setTeacherName] = useState('Trần Thị B');
+      const [reason, setReason] = useState('Đạt thành tích xuất sắc trong học tập');
+      const [customReason, setCustomReason] = useState('');
+      const [photoUrl, setPhotoUrl] = useState(null);
+      const [photoImg, setPhotoImg] = useState(null);
+      const [fontsLoaded, setFontsLoaded] = useState(false);
+      const [decoration, setDecoration] = useState('medal');
+      const [laurelStyle, setLaurelStyle] = useState('none');
+
+      const predefinedReasons = [
+        'Đạt thành tích xuất sắc trong học tập',
+        'Có tiến bộ vượt bậc trong học tập',
+        'Tích cực tham gia phong trào lớp',
+        'Đạt điểm cao nhất lớp',
+        'Năng nổ giúp đỡ bạn bè',
+        'Khác'
+      ];
+
+      // Tải Font chữ Thư Pháp
+      useEffect(() => {
+        const link = document.createElement('link');
+        link.href = 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+        document.fonts.ready.then(() => setFontsLoaded(true));
+        return () => document.head.removeChild(link);
+      }, []);
+
+      const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => setPhotoImg(img);
+            img.src = event.target.result;
+            setPhotoUrl(event.target.result);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+
+      // Tự động cập nhật Canvas khi thay đổi trạng thái
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || !fontsLoaded) return;
+
+        // Tính toán thông tin hiển thị trên Preview (chế độ hàng loạt sẽ hiện học sinh đầu tiên làm mẫu)
+        const globalReason = reason === 'Khác' ? customReason : reason;
+        let previewName = studentName;
+        let previewClass = className;
+        let previewReason = globalReason;
+
+        if (inputMode === 'batch' && studentList.trim().length > 0) {
+            const firstLine = studentList.split('\n').filter(l => l.trim() !== '')[0];
+            if (firstLine) {
+                const parts = firstLine.split('|').map(p => p.trim());
+                previewName = parts[0] || '...';
+                previewClass = parts[1] || className;
+                previewReason = parts[2] || globalReason;
+            }
+        } else if (inputMode === 'batch') {
+            previewName = '[TÊN HỌC SINH MẪU]';
+        }
+
+        renderCertificate(canvas, {
+           theme: THEMES[selectedTheme],
+           schoolName,
+           className: previewClass,
+           period,
+           studentName: previewName,
+           teacherName,
+           reason: previewReason,
+           photoImg,
+           decoration,
+           laurelStyle
+        });
+      }, [selectedTheme, schoolName, className, period, studentName, teacherName, reason, customReason, photoImg, fontsLoaded, decoration, laurelStyle, inputMode, studentList]);
+
+      // Xử lý tải xuống
+      const handleDownload = async () => {
+        if (inputMode === 'single') {
+          // Tải xuống 1 file
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const url = canvas.toDataURL('image/png', 1.0);
+          const link = document.createElement('a');
+          link.download = `Giay_Khen_${studentName.replace(/\s+/g, '_') || 'HocSinh'}.png`;
+          link.href = url;
+          document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        } else {
+          // Tải xuống hàng loạt (ZIP)
+          if (!studentList.trim()) {
+            alert("Vui lòng nhập danh sách học sinh vào ô văn bản!");
+            return;
+          }
+          setIsGenerating(true);
+          
+          try {
+            // Sử dụng JSZip thông qua CDN (window.JSZip)
+            const zip = new window.JSZip();
+            const lines = studentList.split('\n').filter(l => l.trim() !== '');
+            
+            // Tạo một Canvas ẩn để vẽ tốc độ cao mà không ảnh hưởng UI
+            const offscreenCanvas = document.createElement('canvas');
+            const globalReason = reason === 'Khác' ? customReason : reason;
+
+            for (let i = 0; i < lines.length; i++) {
+              const parts = lines[i].split('|').map(p => p.trim());
+              const sName = parts[0];
+              if (!sName) continue;
+              const sClass = parts[1] || className;
+              const sReason = parts[2] || globalReason;
+
+              renderCertificate(offscreenCanvas, {
+                 theme: THEMES[selectedTheme],
+                 schoolName,
+                 className: sClass,
+                 period,
+                 studentName: sName,
+                 teacherName,
+                 reason: sReason,
+                 photoImg, // Lưu ý: Chế độ hàng loạt sẽ dùng chung ảnh thẻ cho tất cả nếu có upload
+                 decoration,
+                 laurelStyle
+              });
+
+              // Chuyển đổi file và đưa vào kho nén
+              const dataUrl = offscreenCanvas.toDataURL('image/png');
+              const base64Data = dataUrl.replace(/^data:image\/(png|jpg);base64,/, "");
+              zip.file(`Giay_Khen_${sName.replace(/\s+/g, '_')}.png`, base64Data, {base64: true});
+            }
+
+            const content = await zip.generateAsync({type: "blob"});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = `Danh_Sach_Giay_Khen.zip`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+          } catch (error) {
+            console.error(error);
+            alert("Có lỗi xảy ra trong quá trình nén file!");
+          }
+          
+          setIsGenerating(false);
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* PANEL TRÁI */}
+            <div className="lg:col-span-4 bg-white rounded-2xl shadow-xl p-6 h-fit border border-gray-100">
+              <div className="flex items-center space-x-3 mb-6 border-b pb-4">
+                <Award className="w-8 h-8 text-yellow-600" />
+                <h1 className="text-2xl font-bold text-gray-800">Tạo Giấy Khen</h1>
+              </div>
+
+              {/* TABS: Chế độ nhập */}
+              <div className="flex bg-gray-100 p-1 rounded-lg mb-6 shadow-inner">
+                <button 
+                  onClick={() => setInputMode('single')} 
+                  className={`flex items-center justify-center space-x-2 flex-1 py-2.5 text-sm font-medium rounded-md transition-all ${inputMode === 'single' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Tạo 1 tờ</span>
+                </button>
+                <button 
+                  onClick={() => setInputMode('batch')} 
+                  className={`flex items-center justify-center space-x-2 flex-1 py-2.5 text-sm font-medium rounded-md transition-all ${inputMode === 'batch' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Tạo Hàng Loạt</span>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <LayoutTemplate className="w-4 h-4" />
+                    <span>Chọn Mẫu Giấy Khen</span>
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {Object.values(THEMES).map((t) => (
+                      <button key={t.id} onClick={() => setSelectedTheme(t.id)}
+                        className={`px-2 py-2 text-sm rounded-lg border-2 font-medium transition-all truncate ${selectedTheme === t.id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300'}`}>
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 border-gray-100"></div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên Trường</label>
+                  <div className="relative">
+                    <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input type="text" value={schoolName} onChange={(e) => setSchoolName(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nhập tên trường..." />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Lớp {inputMode === 'batch' && '(Mặc định)'}</label>
+                    <input type="text" value={className} onChange={(e) => setClassName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="VD: 10A1" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Thời gian</label>
+                    <input type="text" value={period} onChange={(e) => setPeriod(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="VD: Tuần 10" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Giáo Viên Chủ Nhiệm (Ký)</label>
+                  <input type="text" value={teacherName} onChange={(e) => setTeacherName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Tên GVCN sẽ thành chữ thư pháp..." />
+                </div>
+
+                {inputMode === 'single' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Họ và Tên Học Sinh</label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input type="text" value={studentName} onChange={(e) => setStudentName(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nhập tên học sinh..." />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Lý do khen thưởng</label>
+                      <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-2">
+                        {predefinedReasons.map((r, i) => <option key={i} value={r}>{r}</option>)}
+                      </select>
+                      {reason === 'Khác' && (
+                        <textarea value={customReason} onChange={(e) => setCustomReason(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Nhập lý do cụ thể..." rows="2" />
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <label className="flex items-center space-x-2 text-sm font-bold text-blue-900 mb-2">
+                      <FileArchive className="w-4 h-4" />
+                      <span>Danh sách học sinh (Mỗi dòng 1 em)</span>
+                    </label>
+                    <textarea 
+                      value={studentList}
+                      onChange={(e) => setStudentList(e.target.value)}
+                      className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none font-mono text-sm leading-relaxed"
+                      rows="6"
+                      placeholder="Nguyễn Văn A&#10;Trần Thị B | 10A2&#10;Lê Văn C | 10A3 | Học sinh Xuất sắc nhất"
+                    />
+                    <div className="text-xs text-blue-700 mt-2 space-y-1">
+                      <p><b>Cú pháp nâng cao:</b> Tên | Lớp | Lý do</p>
+                      <p><i>Lớp và Lý do nếu để trống sẽ tự động lấy thông tin mặc định ở trên.</i></p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t pt-4 border-gray-100"></div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Hoa văn Góc phải</label>
+                    <div className="relative">
+                      <Trophy className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                      <select value={decoration} onChange={(e) => setDecoration(e.target.value)} className="w-full pl-8 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="none">Trống</option>
+                        <option value="medal">Huy chương</option>
+                        <option value="trophy">Cúp Vàng</option>
+                        <option value="crown">Vương Miện</option>
+                        <option value="shield">Khiên Chắn</option>
+                        <option value="ribbon_rosette">Ruy Băng</option>
+                        <option value="starburst">Ngôi Sao</option>
+                        <option value="sun">Mặt Trời</option>
+                        <option value="flower">Bông Hoa</option>
+                        <option value="book">Sách</option>
+                        <option value="diamond">Kim Cương</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Vòng Nguyệt Quế</label>
+                    <select value={laurelStyle} onChange={(e) => setLaurelStyle(e.target.value)} className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                      <option value="none">Không có</option>
+                      <option value="classic_gold">Vàng Cổ Điển</option>
+                      <option value="royal_emerald">Ngọc Lục Bảo</option>
+                      <option value="sapphire_silver">Bạch Kim</option>
+                      <option value="autumn_glory">Lá Thu</option>
+                      <option value="cherry_blossom">Hoa Anh Đào</option>
+                      <option value="celestial_stars">Dải Ngân Hà</option>
+                      <option value="victory_wings">Đôi Cánh</option>
+                      <option value="olympic_olive">Nhánh Ô-liu</option>
+                      <option value="neon_cyber">Neon</option>
+                      <option value="rainbow_pride">Cầu Vồng</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh Logo / Ảnh thẻ dùng chung</label>
+                  <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition-colors group">
+                    <div className="flex items-center space-x-2">
+                      <ImageIcon className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
+                      <span className="text-sm text-gray-500 group-hover:text-blue-600 truncate">
+                        {photoUrl ? 'Đã tải ảnh lên (Nhấn để đổi)' : 'Chọn ảnh từ máy tính'}
+                      </span>
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                  </label>
+                </div>
+
+                <button 
+                  onClick={handleDownload} 
+                  disabled={isGenerating}
+                  className={`w-full mt-6 flex items-center justify-center space-x-2 font-medium py-3 px-4 rounded-xl transition-all shadow-md ${isGenerating ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white'}`}
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" /><span>Đang xử lý nén file...</span></>
+                  ) : (
+                    <><Download className="w-5 h-5" /><span>{inputMode === 'single' ? 'Tải Xuống 1 Bản' : 'Tạo & Tải File ZIP Hàng Loạt'}</span></>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* PANEL PHẢI: Live Preview */}
+            <div className="lg:col-span-8 flex flex-col items-center bg-gray-50 rounded-2xl p-4 lg:p-8 border border-gray-200">
+              <div className="w-full flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold text-gray-700">Xem Trước {inputMode === 'batch' && '(Bản Mẫu)'}</h2>
+                <div className="flex items-center space-x-2">
+                  {!fontsLoaded && <span className="text-xs text-orange-600 animate-pulse">Đang tải font thư pháp...</span>}
+                  <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">Độ phân giải in ấn (A4)</span>
+                </div>
+              </div>
+              
+              <div className="w-full bg-white shadow-2xl rounded-sm overflow-hidden border-4 border-gray-300 relative group">
+                <canvas ref={canvasRef} className="w-full h-auto object-contain" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                   <div className="bg-white/90 px-4 py-2 rounded-lg font-medium text-gray-800 shadow-lg flex items-center space-x-2">
+                     <Download className="w-4 h-4 text-blue-600" />
+                     <span>Nhấn Tải Xuống ở hộp thoại bên trái</span>
+                   </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
